@@ -20,8 +20,10 @@
 # Polaris Generic Table：两份 PR 的路线图
 
 > 截至 2026-10-06 的工作计划，不代表社区已认可设计，也不代表代码已通过测试。
-> 实验、代码状态和构建阻塞见 [DEVLOG.md](DEVLOG.md)。Part 1 源码改动位于另一条**本地、尚未提交**的
-> `generic-table-location-validation` 分支；本 notes 分支不包含这些改动。
+> 实验、代码状态和构建阻塞见 [DEVLOG.md](DEVLOG.md)。Part 1 源码草稿已作为
+> [WIP commit `1198b143a8`](https://github.com/Ruobing1997/polaris/commit/1198b143a8626082c45b9f5480fd8b71d3547db0)
+> 推送到个人 fork 的 `generic-table-location-validation` 分支；**尚未通过测试，也未开 PR**。
+> 本 notes 分支不包含这些源码改动。
 
 ## 一分钟理解问题
 
@@ -100,8 +102,8 @@ optimized sibling check，或必须调整索引／fallback。PR 描述链接 Par
    `./gradlew :polaris-runtime-service:check`；逐文件审阅 diff，运行 `git diff --check`。
 3. 用包含 Part 1 的构建重做 [devlog 中的两条 `gt_lab` 请求](DEVLOG.md)，同时记录 POST 与
    后续 GET。旧 `apache/polaris:latest` 镜像的结果只是 baseline，不验证新源码。
-4. 确认 PR 只含 Part 1，提交／推送代码分支到个人 fork，再写可独立理解的 PR 描述。只报告
-   **实际运行**的检查；绝不把未运行写成通过。
+4. WIP 代码分支已在个人 fork；检查通过后，更新该分支并确认 PR 只含 Part 1，再写可独立
+   理解的 PR 描述。只报告**实际运行**的检查；绝不把未运行写成通过。
 
 截至本快照，Gradle 在 settings 插件解析阶段、Java 编译之前失败，原因未确定。因此定向测试、
 format／compile 与 module check 均为**未验证**。向社区发送 Slack 消息前，必须先展示草稿并取得

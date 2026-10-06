@@ -30,9 +30,11 @@ create 可以保存越过 catalog allowed locations 或父 namespace 的显式 `
 在 Apache Polaris checkout 中区分两条分支：
 
 - 个人 fork 的 `ruobing_polaris_dev_and_learn`：只有这份学习／续接文档和计划。
-- 本地 `generic-table-location-validation`：Part 1 源码工作分支，建立于当时的
-  `upstream/main` commit `243ec7c94d`。截至 2026-10-06，源码改动**尚未提交、尚未推送**；
-  因此在另一台电脑上仅拉取本 notes 分支，不会得到那些源码改动。
+- 个人 fork 的 [`generic-table-location-validation`](https://github.com/Ruobing1997/polaris/tree/generic-table-location-validation)：
+  Part 1 源码 WIP 分支，建立于当时的 `upstream/main` commit `243ec7c94d`，后以
+  [commit `1198b143a8`](https://github.com/Ruobing1997/polaris/commit/1198b143a8626082c45b9f5480fd8b71d3547db0)
+  推送。**尚未通过编译和测试，也未开 PR**。在另一台电脑上须单独拉取此代码分支；仅拉取
+  notes 分支不会得到源码改动。
 
 再次开始工作时，先检查 `git status`、远端引用和最新 upstream，不要假设本文快照仍是现状。
 
@@ -105,24 +107,26 @@ image ID 为 `sha256:347615e736cab2c9be0d8c464552ac930be4755302bb0aeb745216bbae9
 决定，不删除它们。最初误用 Iceberg `/v1` 路由的四个请求只得到路由层 404，没有业务证据也
 没有创建记录；上表来自改用文档指定的 `/polaris/v1` 后的请求。
 
-### 本地 Part 1 源码改动：仅为工作草稿
+### Part 1 源码改动：已推送 WIP，尚未验证
 
-截至此快照，本地 `generic-table-location-validation` 工作树的 diff 包含：
+WIP [commit `1198b143a8`](https://github.com/Ruobing1997/polaris/commit/1198b143a8626082c45b9f5480fd8b71d3547db0)
+包含：
 
-1. [Local create](../../runtime/service/src/main/java/org/apache/polaris/service/catalog/generic/PolarisGenericTableCatalog.java)：
+1. [Local create](https://github.com/Ruobing1997/polaris/blob/generic-table-location-validation/runtime/service/src/main/java/org/apache/polaris/service/catalog/generic/PolarisGenericTableCatalog.java)：
    完成同名检查后、构建／持久化 entity 前，对非 `null`、非空位置调用
    `CatalogUtils.validateLocationsForTableLike(callContext.getRealmConfig(), identifier,
    Set.of(baseLocation), resolvedParent)`。没有加入 overlap。
-2. [共享 Generic 测试](../../runtime/service/src/test/java/org/apache/polaris/service/catalog/generic/AbstractPolarisGenericTableCatalogTest.java)：
+2. [共享 Generic 测试](https://github.com/Ruobing1997/polaris/blob/generic-table-location-validation/runtime/service/src/test/java/org/apache/polaris/service/catalog/generic/AbstractPolarisGenericTableCatalogTest.java)：
    保留 null／空字符串和同名行为；增加合法 S3、越界 bucket、`file://`，并检查拒绝后无法 load。
-3. 新建 `runtime/service/src/test/java/org/apache/polaris/service/catalog/generic/GenericTableAllowedLocationTest.java`：
+3. 新建 [GenericTableAllowedLocationTest](https://github.com/Ruobing1997/polaris/blob/generic-table-location-validation/runtime/service/src/test/java/org/apache/polaris/service/catalog/generic/GenericTableAllowedLocationTest.java)：
    用 `TestServices` 测 `ALLOW_UNSTRUCTURED_TABLE_LOCATION` 开／关；每个 create request 都有
    必填的 `name` 和 `format`。
-4. [Generic Table 文档](../../site/content/in-dev/unreleased/generic-table.md)与
-   [Unreleased changelog](../../CHANGELOG.md)：说明显式位置限制及旧请求可能被拒绝的变化。
+4. [Generic Table 文档](https://github.com/Ruobing1997/polaris/blob/generic-table-location-validation/site/content/in-dev/unreleased/generic-table.md)与
+   [Unreleased changelog](https://github.com/Ruobing1997/polaris/blob/generic-table-location-validation/CHANGELOG.md)：
+   说明显式位置限制及旧请求可能被拒绝的变化。
 
-这是快照而非“代码已正确”的结论；恢复工作时应在**代码分支**重新检查 `git diff`。本 notes
-分支不包含这些源码改动。
+这是 WIP 而非“代码已正确”的结论；恢复工作时应在**代码分支**重新检查 commit、`git status`
+和相对最新 upstream 的 diff。本 notes 分支不包含这些源码改动。
 
 ### 构建与验证状态
 
@@ -153,11 +157,12 @@ PR 前必须完成仓库 [AGENTS.md](../../AGENTS.md) 的硬门槛。
 
 ## 下次接手的顺序
 
-1. 检查 notes 与代码两个分支的 Git 状态；另一台电脑上不会自动出现尚未推送的源码。确认
-   个人 Git 身份、`origin` 为个人 fork、`upstream` 为 Apache Polaris，并核对最新 main。
+1. 检查 notes 与代码两个分支的 Git 状态；另一台电脑上需从 fork **单独拉取代码分支**。
+   确认个人 Git 身份、`origin` 为个人 fork、`upstream` 为 Apache Polaris，并核对最新 main。
 2. 在代码分支逐文件审阅 Part 1 diff；排查 Gradle 插件／网络／缓存问题时，不未经告知改持久
    机器配置。能构建后运行定向测试、`./gradlew format compileAll`、module `check`。
 3. 用包含 Part 1 的构建重做上表两条 API 请求，分别记录 POST 和 GET；旧 Docker 镜像的 200
    只说明旧行为，不证明修复。
-4. 验证完成才提交／推送**代码分支**到个人 fork，准备引用 #4237 的 Part 1 PR，明确 overlap
-   不在范围内，也不声称社区已同意拆分。Slack 消息先展示草稿并获得明确确认，方可发送。
+4. WIP 代码分支已推送；验证完成后，修正并更新该分支，再准备引用 #4237 的 Part 1 PR，
+   明确 overlap 不在范围内，也不声称社区已同意拆分。Slack 消息先展示草稿并获得明确确认，
+   方可发送。
