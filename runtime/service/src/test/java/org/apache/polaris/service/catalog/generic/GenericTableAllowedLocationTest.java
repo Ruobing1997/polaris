@@ -23,6 +23,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import jakarta.ws.rs.core.Response;
 import java.nio.file.Path;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -95,7 +96,7 @@ public class GenericTableAllowedLocationTest {
     CreateNamespaceRequest namespaceRequest =
         CreateNamespaceRequest.builder()
             .withNamespace(Namespace.of(NAMESPACE))
-            .setProperties(Map.of("location", namespaceLocation))
+            .setProperties(new HashMap<>(Map.of("location", namespaceLocation)))
             .build();
     try (Response response =
         services
