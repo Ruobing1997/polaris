@@ -108,3 +108,42 @@ optimized sibling check，或必须调整索引／fallback。PR 描述链接 Par
 截至本快照，Gradle 在 settings 插件解析阶段、Java 编译之前失败，原因未确定。因此定向测试、
 format／compile 与 module check 均为**未验证**。向社区发送 Slack 消息前，必须先展示草稿并取得
 贡献者明确确认。
+
+## 个人电脑验证脚本
+
+本学习分支保存了 [`verify-part1.sh`](verify-part1.sh)，它接收**另一份**
+`generic-table-location-validation` 分支 checkout 的路径，因此不会把个人验证脚本混进 Part 1 PR。
+若个人电脑上尚无这两份 checkout，先分别从个人 fork 拉取代码和学习分支；只在个人电脑、
+确认代码 checkout 干净后运行：
+
+```bash
+git clone --branch generic-table-location-validation https://github.com/Ruobing1997/polaris.git polaris-part1
+git clone --branch ruobing_polaris_dev_and_learn --single-branch --depth 1 https://github.com/Ruobing1997/polaris.git polaris-notes
+cd polaris-notes
+POLARIS_PERSONAL_MACHINE=1 bash contributor-notes/generic-table/verify-part1.sh build ../polaris-part1
+```
+
+`build` 模式先检查 JDK 21 和 Docker，再使用独立的 `~/.gradle-polaris-oss` 缓存运行三类定向测试、
+`format compileAll`、`:polaris-runtime-service:check` 和 `git diff HEAD --check`。`format` 可能改动
+代码；脚本不会提交或推送这些改动，会打印状态和保留在临时目录中的日志。
+
+`api` 模式须先按仓库 README 从 **Part 1 checkout** 启动 `./gradlew run`，并在本机 9000 端口
+运行 quickstart RustFS；不要把 `apache/polaris:latest` 当成待测服务：
+
+```bash
+cd ../polaris-part1
+docker compose -p polaris-gt-verify -f site/content/guides/quickstart/docker-compose.yml up -d rustfs bucket-setup
+AWS_REGION=us-west-2 AWS_ACCESS_KEY_ID=polaris_root AWS_SECRET_ACCESS_KEY=polaris_pass \
+  ./gradlew run -Dpolaris.bootstrap.credentials=POLARIS,root,s3cr3t
+```
+
+源码版 Polaris 启动后，从另一个终端、在 `polaris-notes` checkout 运行：
+
+```bash
+POLARIS_PERSONAL_MACHINE=1 POLARIS_SOURCE_SERVER=1 \
+  bash contributor-notes/generic-table/verify-part1.sh api ../polaris-part1
+```
+
+它只接受 localhost URL，使用 quickstart 演示凭据，在本地服务中新建独立 catalog／namespace，
+验证成功位置、allowed locations 外、namespace 外、`file://`、缺省／空位置和重名行为，并保留
+实验记录与响应文件。两个模式都**尚未在公司电脑上运行**；脚本通过语法检查不等于测试通过。

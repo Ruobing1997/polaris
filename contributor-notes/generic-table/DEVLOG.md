@@ -166,3 +166,8 @@ PR 前必须完成仓库 [AGENTS.md](../../AGENTS.md) 的硬门槛。
 4. WIP 代码分支已推送；验证完成后，修正并更新该分支，再准备引用 #4237 的 Part 1 PR，
    明确 overlap 不在范围内，也不声称社区已同意拆分。Slack 消息先展示草稿并获得明确确认，
    方可发送。
+
+## 2026-10-06（Tuesday）后续：个人电脑验证脚本
+
+- 在学习分支新增 [`verify-part1.sh`](verify-part1.sh)，供个人电脑上的 Part 1 checkout 使用。`build` 模式按计划运行三个定向测试类、`format compileAll`、runtime-service `check` 与 diff whitespace 检查；`api` 模式要求先由源码启动本地 Polaris，再建立独立测试 catalog 并验证正反例。脚本不会提交、推送或删除实验 catalog；API 模式会留下本地实验记录。
+- 脚本要求显式设置 `POLARIS_PERSONAL_MACHINE=1`；API 模式另要求 `POLARIS_SOURCE_SERVER=1`，避免误在公司电脑构建或把旧 quickstart Docker 镜像当成新源码。当前只做了 `bash -n` 静态语法检查，**没有运行任何 Gradle 命令、服务或 API 测试**；功能结果仍为未验证。
