@@ -19,11 +19,12 @@
 
 # Polaris Generic Table：两份 PR 的路线图
 
-> 截至 2026-10-06 的工作计划，不代表社区已认可设计，也不代表代码已通过测试。
-> 实验、代码状态和构建阻塞见 [DEVLOG.md](DEVLOG.md)。Part 1 源码草稿已作为
-> [WIP commit `1198b143a8`](https://github.com/Ruobing1997/polaris/commit/1198b143a8626082c45b9f5480fd8b71d3547db0)
-> 推送到个人 fork 的 `generic-table-location-validation` 分支；**尚未通过测试，也未开 PR**。
-> 本 notes 分支不包含这些源码改动。
+> 更新于 2026-10-08。Part 1 已完成本地验收，并整理为
+> [`generic-table-location-validation-part1`](https://github.com/Ruobing1997/polaris/tree/generic-table-location-validation-part1)
+> 上的正式提交 [`6af9614d61`](https://github.com/Ruobing1997/polaris/commit/6af9614d6138ebc3b4b0547a863fc36f91d09e26)。
+> 它基于验收使用的 main `768fd7f95b`，仅有一个功能提交，不含旧 WIP 历史。
+> 仍未创建 Part 1 PR，也不代表社区已认可完整设计。验收范围见 [DEVLOG.md](DEVLOG.md)。
+> 本 notes 分支只保存学习记录与验证脚本，不包含功能源码。
 
 ## 一分钟理解问题
 
@@ -66,8 +67,9 @@ API 合约中的 `base-location` 是可选字段，不能为了校验而悄悄�
 | 已存在的名称，加上一个无效新位置 | 仍优先返回同名冲突。 |
 | 不同名称、相同的合法位置 | Part 1 可能仍接受；留给 Part 2。 |
 
-测试分两层：[共享 Generic Catalog 测试](../../runtime/service/src/test/java/org/apache/polaris/service/catalog/generic/AbstractPolarisGenericTableCatalogTest.java)
-覆盖 relational 与 NoSQL 的合法／越界／无位置／同名行为；另用 `TestServices` 经 API 比较
+测试分两层：[共享 Generic Catalog 测试](https://github.com/Ruobing1997/polaris/blob/generic-table-location-validation-part1/runtime/service/src/test/java/org/apache/polaris/service/catalog/generic/AbstractPolarisGenericTableCatalogTest.java)
+覆盖既有默认内存与 NoSQL 内存 fixtures 的合法／越界／无位置／同名行为；名称含 Relational
+的测试类并不等于 PostgreSQL/JDBC 后端测试。另用 `TestServices` 经 API 比较
 `ALLOW_UNSTRUCTURED_TABLE_LOCATION` 开／关，请求包含必填 `name` 与 `format`。同步更新
 [Generic Table 文档](../../site/content/in-dev/unreleased/generic-table.md)和
 [CHANGELOG.md](../../CHANGELOG.md)，明确“旧版本可能接受、现在拒绝”的兼容性影响。
@@ -97,33 +99,35 @@ optimized sibling check，或必须调整索引／fallback。PR 描述链接 Par
 
 ## 开 PR 1 前必须完成
 
-1. 在**代码分支**上运行定向测试，确认测试能识别旧行为，修改后在相关持久化后端通过。
-2. 按仓库 [AGENTS.md](../../AGENTS.md) 跑 `./gradlew format compileAll` 和
-   `./gradlew :polaris-runtime-service:check`；逐文件审阅 diff，运行 `git diff --check`。
-3. 用包含 Part 1 的构建重做 [devlog 中的两条 `gt_lab` 请求](DEVLOG.md)，同时记录 POST 与
-   后续 GET。旧 `apache/polaris:latest` 镜像的结果只是 baseline，不验证新源码。
-4. WIP 代码分支已在个人 fork；检查通过后，更新该分支并确认 PR 只含 Part 1，再写可独立
-   理解的 PR 描述。只报告**实际运行**的检查；绝不把未运行写成通过。
+1. 已完成：旧实现的负向对照、定向测试、整体 `format compileAll`、完整
+   `:polaris-runtime-service:check`、源码服务 HTTP 对照、ASF RAT 和 diff whitespace 检查。
+   实际结果及跳过范围见 [验收记录](DEVLOG.md#2026-10-08thursday正式分支与最终验收)。
+2. 已完成：逐文件自审，将相同验收源码整理为 7 文件的单个正式提交，核对个人 Git 身份、
+   完整补丁一致及新工作区干净；不带个人笔记、runbook、IDE 或构建文件。
+3. 待完成：人类作者确认能端到端解释实现、测试及范围；再按模板准备 Part 1 PR，写明
+   “Part 1 of 2 / Related to #4237”，不宣称覆盖旧 PR 的 overlap 部分。
+4. 如因 review 或更新 main 改动源码，重新运行相关验证。只报告实际运行的检查；1,042 个
+   条件跳过的用例不能写成通过，真实云与物理 Delta 读写仍未验证。
 
-截至本快照，Gradle 在 settings 插件解析阶段、Java 编译之前失败，原因未确定。因此定向测试、
-format／compile 与 module check 均为**未验证**。向社区发送 Slack 消息前，必须先展示草稿并取得
-贡献者明确确认。
+早期的 Gradle 阻塞及 WIP 是 2026-10-06 的历史快照，不是当前验收状态。验收 main 已包含
+独立构建修复 [#5737](https://github.com/apache/polaris/pull/5737)，该修复不属于 Part 1 diff。
+向社区发送 Slack 消息仍须先展示草稿并取得贡献者明确确认。
 
 ## 个人电脑验证脚本
 
 本学习分支保存了 [`verify-part1.sh`](verify-part1.sh)，它接收**另一份**
-`generic-table-location-validation` 分支 checkout 的路径，因此不会把个人验证脚本混进 Part 1 PR。
+`generic-table-location-validation-part1` 分支 checkout 的路径，因此不会把个人验证脚本混进 Part 1 PR。
 若个人电脑上尚无这两份 checkout，先分别从个人 fork 拉取代码和学习分支；只在个人电脑、
 确认代码 checkout 干净后运行：
 
 ```bash
-git clone --branch generic-table-location-validation https://github.com/Ruobing1997/polaris.git polaris-part1
+git clone --branch generic-table-location-validation-part1 https://github.com/Ruobing1997/polaris.git polaris-part1
 git clone --branch ruobing_polaris_dev_and_learn --single-branch --depth 1 https://github.com/Ruobing1997/polaris.git polaris-notes
 cd polaris-notes
 POLARIS_PERSONAL_MACHINE=1 bash contributor-notes/generic-table/verify-part1.sh build ../polaris-part1
 ```
 
-`build` 模式先检查 JDK 21 和 Docker，再使用独立的 `~/.gradle-polaris-oss` 缓存运行三类定向测试、
+`build` 模式先检查 JDK 21+ 和 Docker，再使用独立的 `~/.gradle-polaris-oss` 缓存运行三类定向测试、
 `format compileAll`、`:polaris-runtime-service:check` 和 `git diff HEAD --check`。`format` 可能改动
 代码；脚本不会提交或推送这些改动，会打印状态和保留在临时目录中的日志。
 
@@ -146,4 +150,5 @@ POLARIS_PERSONAL_MACHINE=1 POLARIS_SOURCE_SERVER=1 \
 
 它只接受 localhost URL，使用 quickstart 演示凭据，在本地服务中新建独立 catalog／namespace，
 验证成功位置、allowed locations 外、namespace 外、`file://`、缺省／空位置和重名行为，并保留
-实验记录与响应文件。两个模式都**尚未在公司电脑上运行**；脚本通过语法检查不等于测试通过。
+实验记录与响应文件。该学习脚本的两个模式尚未实际执行；此前验收使用直接 Gradle 命令和独立
+HTTP 对照，不把它们写成此脚本已通过。2026-10-08 的脚本更新仅做语法及分支/JDK 检查逻辑验证。

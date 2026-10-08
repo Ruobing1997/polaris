@@ -55,8 +55,9 @@ checkout="$(git -C "$checkout_arg" rev-parse --show-toplevel)" ||
 [[ -f "$checkout/gradlew" ]] || fail "Not a Polaris checkout: $checkout"
 
 branch="$(git -C "$checkout" branch --show-current)"
-[[ "$branch" == generic-table-location-validation ]] ||
-  fail "Expected generic-table-location-validation, found: ${branch:-detached HEAD}"
+[[ "$branch" == generic-table-location-validation-part1 ||
+  "$branch" == generic-table-location-validation ]] ||
+  fail "Expected a Generic Table Part 1 branch, found: ${branch:-detached HEAD}"
 origin="$(git -C "$checkout" remote get-url origin)"
 [[ "$origin" == *Ruobing1997/polaris* ]] ||
   fail "Expected the personal Polaris fork as origin, found: $origin"
@@ -76,10 +77,12 @@ if [[ "$mode" == build ]]; then
   else
     javac_command="$(command -v javac || true)"
   fi
-  [[ -n "$javac_command" && -x "$javac_command" ]] || fail 'JDK 21 javac is required.'
+  [[ -n "$javac_command" && -x "$javac_command" ]] || fail 'JDK 21 or later javac is required.'
   javac_version="$("$javac_command" -version 2>&1)"
-  [[ "$javac_version" =~ ^javac[[:space:]]+21([.]|$) ]] ||
-    fail "Expected JDK 21, found: $javac_version"
+  [[ "$javac_version" =~ ^javac[[:space:]]+([0-9]+)([.]|$) ]] ||
+    fail "Could not determine JDK version: $javac_version"
+  (( BASH_REMATCH[1] >= 21 )) ||
+    fail "Expected JDK 21 or later, found: $javac_version"
   docker info >/dev/null 2>&1 || fail 'Docker is not running.'
 
   export GRADLE_USER_HOME="${POLARIS_GRADLE_USER_HOME:-$HOME/.gradle-polaris-oss}"

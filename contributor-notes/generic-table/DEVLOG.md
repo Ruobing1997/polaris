@@ -23,18 +23,22 @@
 create 可以保存越过 catalog allowed locations 或父 namespace 的显式 `base-location`。目标分
 两份 PR：**Part 1 校验位置是否被允许，Part 2 校验位置是否与其他实体重叠**。credential vending
 再往后讨论。[PLAN.md](PLAN.md) 写目标行为和验收门槛；本文记录已经观察到什么、改了什么、
-哪些事情**尚未验证**。
+哪些事情**尚未验证**。下方 2026-10-06 的 WIP／构建阻塞是历史记录；最新状态见
+[2026-10-08 的正式分支与验收](#2026-10-08thursday正式分支与最终验收)。
 
 # work directory
 
-在 Apache Polaris checkout 中区分两条分支：
+在 Apache Polaris checkout 中区分当前分支与历史分支：
 
 - 个人 fork 的 `ruobing_polaris_dev_and_learn`：只有这份学习／续接文档和计划。
+- 个人 fork 的 [`generic-table-location-validation-part1`](https://github.com/Ruobing1997/polaris/tree/generic-table-location-validation-part1)：
+  当前正式 Part 1 代码，commit [`6af9614d61`](https://github.com/Ruobing1997/polaris/commit/6af9614d6138ebc3b4b0547a863fc36f91d09e26)，
+  基于验收 main `768fd7f95b`；已通过本地验收，尚未开 Part 1 PR。另一台电脑应拉取此分支。
 - 个人 fork 的 [`generic-table-location-validation`](https://github.com/Ruobing1997/polaris/tree/generic-table-location-validation)：
   Part 1 源码 WIP 分支，建立于当时的 `upstream/main` commit `243ec7c94d`，后以
   [commit `1198b143a8`](https://github.com/Ruobing1997/polaris/commit/1198b143a8626082c45b9f5480fd8b71d3547db0)
-  推送。**尚未通过编译和测试，也未开 PR**。在另一台电脑上须单独拉取此代码分支；仅拉取
-  notes 分支不会得到源码改动。
+  推送。这是历史 WIP 分支，不再用作最终候选；当时尚未完成编译和测试。仅拉取 notes 分支
+  不会得到任何功能源码。
 
 再次开始工作时，先检查 `git status`、远端引用和最新 upstream，不要假设本文快照仍是现状。
 
@@ -155,7 +159,7 @@ PR 前必须完成仓库 [AGENTS.md](../../AGENTS.md) 的硬门槛。
 [`ModelEntity`](../../persistence/relational-jdbc/src/main/java/org/apache/polaris/persistence/relational/jdbc/models/ModelEntity.java)和
 [`LocalIcebergCatalog`](../../runtime/service/src/main/java/org/apache/polaris/service/catalog/iceberg/LocalIcebergCatalog.java)。
 
-## 下次接手的顺序
+## 2026-10-06 快照：当时下次接手的顺序
 
 1. 检查 notes 与代码两个分支的 Git 状态；另一台电脑上需从 fork **单独拉取代码分支**。
    确认个人 Git 身份、`origin` 为个人 fork、`upstream` 为 Apache Polaris，并核对最新 main。
@@ -171,3 +175,75 @@ PR 前必须完成仓库 [AGENTS.md](../../AGENTS.md) 的硬门槛。
 
 - 在学习分支新增 [`verify-part1.sh`](verify-part1.sh)，供个人电脑上的 Part 1 checkout 使用。`build` 模式按计划运行三个定向测试类、`format compileAll`、runtime-service `check` 与 diff whitespace 检查；`api` 模式要求先由源码启动本地 Polaris，再建立独立测试 catalog 并验证正反例。脚本不会提交、推送或删除实验 catalog；API 模式会留下本地实验记录。
 - 脚本要求显式设置 `POLARIS_PERSONAL_MACHINE=1`；API 模式另要求 `POLARIS_SOURCE_SERVER=1`，避免误在公司电脑构建或把旧 quickstart Docker 镜像当成新源码。当前只做了 `bash -n` 静态语法检查，**没有运行任何 Gradle 命令、服务或 API 测试**；功能结果仍为未验证。
+
+## 2026-10-08（Thursday）：正式分支与最终验收
+
+日期与星期已用 `date`、`cal` 核对。贡献者在本次讨论中要求：验收后新建干净分支，使用正式
+commit 而非 WIP，并将本次 Polaris 工作同步至个人 fork。新分支不改写历史 WIP，也不与学习
+笔记混在一起。后面的结果是最新验收快照，取代上面“尚未验证”的历史状态。
+
+### 正式代码
+
+- 分支：[`generic-table-location-validation-part1`](https://github.com/Ruobing1997/polaris/tree/generic-table-location-validation-part1)。
+- Commit：[`6af9614d6138ebc3b4b0547a863fc36f91d09e26`](https://github.com/Ruobing1997/polaris/commit/6af9614d6138ebc3b4b0547a863fc36f91d09e26)，
+  标题 `Validate Generic Table base locations on create`。
+- 唯一父提交为 main `768fd7f95bb8d066bd93daffe74b6875b41da343`，已含独立构建修复
+  [#5737](https://github.com/apache/polaris/pull/5737)。#5737 不是本次功能 diff。
+- 恰好 7 文件、244 additions / 5 deletions：create 校验、共享测试、新 namespace 配置测试、
+  两个授权夹具、Generic 文档及 CHANGELOG。没有公共 API、配置项、持久化格式或依赖变化。
+- 新分支相对基线仅有一个正式提交，没有旧 WIP/runbook 提交，也没有学习笔记或 IDE 输出。
+- 暂存前后完整 binary diff 与已验收候选逐字一致，正式提交 tree 为
+  `b8fa53795b0a4f273e7066808db081ad87adcbb6`。新 checkout 的完整 status 为空；原 dirty
+  checkout 未动。整理与推送阶段没有重新运行测试，因为完整源码及基线保持相同。
+
+### 实际验证结果
+
+| 检查 | 实际结果 |
+|---|---|
+| Generic 3 类 + event/tracing 2 类定向测试 | 60 tests，0 failures/errors/skips，1m46s |
+| 旧 create 负向对照 | 6 个新测试，5 个预期失败，暴露旧实现接受非法位置 |
+| `./gradlew format compileAll` | PASS，2m58s，1067 actionable tasks |
+| `./gradlew :polaris-runtime-service:check` | PASS，48m10s；含 Checkstyle、Spotless 及测试任务 |
+| 源码服务 HTTP | 42 个业务 POST/GET/list 请求符合预期，另有 1 次 OAuth 换 token |
+| `./gradlew rat` | PASS，17s |
+| diff whitespace 与范围 | PASS，仅 7 个预期文件 |
+
+完整模块检查：test 141 suites / 22,793 cases / 55 skipped；intTest 25 suites / 2,594 cases /
+78 skipped；cloudTest 9 suites / 909 cases / 全部 skipped。合计 26,296 cases，0 failures/errors；
+**25,254 个未跳过用例通过，1,042 个条件跳过不算已验证**。没有为验收新增 skip 或放宽断言。
+完整仓库 `./gradlew check` 未运行；本次仅修改 runtime-service，因此按仓库 AGENTS.md 执行
+模块 check，并另做整体 compileAll 和 RAT。
+
+现有 intTest 包括 JDBC/PostgreSQL、Cockroach、NoSQL 和模拟存储回归；Generic 三个专项类
+仍使用其既有内存 fixtures，不把通用 JDBC 回归写成新增 Generic 场景已逐后端覆盖。实际云
+路径未配置，真实云集成仍未验证。
+
+HTTP 对照使用与正式提交相同源码启动的本地服务，不是旧 Docker latest。在两种 catalog 配置
+中分别读取 management/namespace 确认有效规则，然后比较：
+
+| 场景 | namespace 约束开启 | unstructured flag 开启 |
+|---|---|---|
+| 合法位置 | POST/GET 200 | POST/GET 200 |
+| allowed locations 外 | POST 403，GET 404 | POST 403，GET 404 |
+| allowed 内、namespace 外 | POST 403，GET 404 | POST/GET 200 |
+| S3 catalog 下不允许的 file 位置 | POST 403，GET 404 | POST 403，GET 404 |
+| 省略/null/空字符串 | 成功，保持原位置语义 | 相同 |
+| 同名请求加非法位置 | 409，GET 保留原记录 | 相同 |
+
+两种配置的 LIST 也确认拒绝请求没有留下记录。实验只注册元数据，不创建真实 Delta 数据文件。
+本地测试服务及其临时容器已停止/清理；原 quickstart 服务与记录未动。验收没有关闭 XML 安全
+保护，没有修改持久 JDK、IDE、代理或系统配置。环境隔离只作用于测试子进程。
+
+### 代码理解与后续
+
+人类作者在开 PR 前应能解释：为何只验证非 null/非空位置、为何传已解析父 namespace、为何
+同名检查优先、为何校验在实体构造/保存之前，以及为何授权夹具需要改为合法位置而非放宽权限。
+
+1. 人类审阅正式 commit，按模板创建 Part 1 PR，说明 “Part 1 of 2 / Related to #4237”。
+2. 不声称 Part 1 修复不同表名共享位置；overlap 留给 Part 2，待 Part 1 合入后再从更新 main
+   设计 Generic/Generic、Generic/Iceberg、双向创建顺序、配置和优化索引测试。
+3. Credential vending 再往后，参考 #4128。拆分仍是我们的提议，不写成 PMC 已正式批准。
+4. `verify-part1.sh` 已适配新分支与 JDK 21+，但本轮只验证语法和 guard 逻辑，没有执行脚本
+   的 build/api 模式；上面的验收来自独立的实际运行，不冒充此脚本已端到端通过。
+
+重新开始时优先拉取正式代码分支，不要继续使用旧 WIP；如源码或 main 基线变化，重新验证。
